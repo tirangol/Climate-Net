@@ -1634,12 +1634,16 @@ function onCanvasMouseDown(event) {
 function selectionButton(event) {
 	const id = event.srcElement.id;
 	let selection = null;
+	let modify = false;
 	if (id == 'selection-invert') {
 		selection = selectionInvert();
+		modify = true;
 	} else if (id == 'selection-expand') {
 		selection = selectionExpand();
+		modify = true;
 	} else if (id == 'selection-contract') {
 		selection = selectionContract();
+		modify = true;
 	} else if (id == 'selection-land') {
 		selection = selectionTerrain(false);
 	} else if (id == 'selection-water') {
@@ -1654,8 +1658,10 @@ function selectionButton(event) {
 		selection = selectionNear();
 		imgButtonTextnumActive(event);
 	}
+	if (!modify)
+		selection = combineSelections(SELECTION, selection);
 	if (selection != null)
-		HISTORY.action([SELECTION, combineSelections(SELECTION, selection)], 'selection');
+		HISTORY.action([SELECTION, selection], 'selection');
 }
 function selectionInvert() {
 	const selection = new Set();
@@ -2176,6 +2182,8 @@ function predictClimate() {
 	if (NO_NEW_MODIFICATIONS)
 		return part3();
 	togglePredictBusy();
+	
+	// TODO threshold not being applied
 
 	// No backend
 	/*
