@@ -1,4 +1,3 @@
-
 # Climate-Net
 
 A worldbuilding app that uses neural networks to predict the climate of Earth-like planets, intended as a fast, high-resolution tool for editing elevation maps and realistic climates. In this context, "Earth-like" means to match modern-era Earth in every property except for the elevation map. The only inputs required are elevation and land/water boundaries; the outputs include monthly temperature and precipitation and climate classifications.
@@ -58,3 +57,5 @@ The data for Earth's elevation, temperature, and precipitation are provided on [
 Data for the shape of lakes and inland water bodies came from an asset in [G.Projector](https://www.giss.nasa.gov/tools/gprojector/).
 
 Data for cities across the world came from the free version of [this site](https://simplemaps.com/data/world-cities). 
+
+Icons come from random images found on Google search. Colour schemes are from matplotlib. Various Javascript libraries were used for handling PNG ([reimg.js](https://github.com/gillyb/reimg)), NPY ([npy-rw.js](https://gist.github.com/LingDong-/b24f172ba0888976143463a8801e2040)), GIF ([GIFEncoder.js](https://github.com/antimatter15/jsgif)) files. I also used Ajax from jQuery to send asynchronous POST requests.
