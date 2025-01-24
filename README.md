@@ -1,3 +1,5 @@
+![Banner](screenshot/banner.png)
+
 # Climate-Net
 
 A worldbuilding app that uses neural networks to predict the climate of Earth-like planets, intended as a fast, high-resolution tool for editing elevation maps and realistic climates. In this context, "Earth-like" means to match modern-era Earth in every property except for the elevation map. The only inputs required are elevation and land/water boundaries; the outputs include monthly temperature and precipitation and climate classifications.
@@ -72,6 +74,6 @@ Icons come from random images found on Google search. Colour schemes are from ma
 
 `TemperatureNet` underpredicts temperature in oceanic west coasts (e.g. West/North Europe) and overpredicts temperature in temperate east coasts (e.g. China).
 
-`PrecipitationNet` is generally a lot less accurate because it is too difficult to algorithmically follow many of the tutorial steps for generating most important features. In general, it vastly underpredicts coastal precipitation and equatorial coastal regions (e.g. Indonesia, Panama) and overpredicts desert/tropic transition zones (e.g. the Sahel). There are also some abrupt precipiation transitions that are very suspect.
+`PrecipitationNet` is generally a lot less accurate because it was too difficult for me to algorithmically follow many of the tutorial steps for generating most important features. In general, it vastly underpredicts coastal precipitation and equatorial coastal regions (e.g. Indonesia, Panama) and overpredicts desert/tropic transition zones (e.g. the Sahel). There are also some abrupt precipiation transitions that are very suspect.
 
 Most of the future development time will probably be focused on improving the `PrecipitationNet` with better features.
