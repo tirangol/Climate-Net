@@ -4,7 +4,7 @@ A worldbuilding app that uses neural networks to predict the climate of Earth-li
 
 An older 2023 version of the project [exists](https://github.com/tirangol/Projects/tree/main/climate%20net). This version upgrades from that in pretty much every way, from more input customization, more powerful map editing, more visualizations, downloading graphics, direct support for NPY (at the cost of TIFF files, which were not working), and faster inference times. I also felt the growing project size warranted a separate repository.
 
-This project is inspired by the worldbuilding tutorials of [Worldbuilding Pasta](https://worldbuildingpasta.blogspot.com/p/blog-page.html), [Artefixian](https://www.youtube.com/playlist?list=PLduA6tsl3gyiX9fFJHi9qqq4RWx-dIcxO), and [Madeline James Writes](https://www.youtube.com/playlist?list=PLmhjHG1F7VXkkH4fG_t3WuZaikiQRJaHJ); the tool essentially automatically the majority of steps outlined in the tutorials the best of my ability, to hopefully decent results. 
+This project is inspired by the intricate worldbuilding tutorials of [Worldbuilding Pasta](https://worldbuildingpasta.blogspot.com/p/blog-page.html), [Artefixian](https://www.youtube.com/playlist?list=PLduA6tsl3gyiX9fFJHi9qqq4RWx-dIcxO), and [Madeline James Writes](https://www.youtube.com/playlist?list=PLmhjHG1F7VXkkH4fG_t3WuZaikiQRJaHJ); the tool essentially performs the majority of steps outlined in the tutorials the best of my ability, to hopefully decent results. 
 
 ## Instructions
  
@@ -15,12 +15,12 @@ This project is inspired by the worldbuilding tutorials of [Worldbuilding Pasta]
 - `torch` 2.4.1
 - `torchvision` 0.19.1
 - `flask`  3.0.3
-- `netCDF4`, 1.7.2
-- `pillow`, 11.0.0
-- `matplotlib`, 3.9.2
-- `sklearn`, 1.5.2
-- `tqdm`, 4.62.3
-- `pandas`, 2.2.3
+- `netCDF4` 1.7.2
+- `pillow` 11.0.0
+- `matplotlib` 3.9.2
+- `sklearn` 1.5.2
+- `tqdm` 4.62.3
+- `pandas` 2.2.3
 
 Only the top five libraries are necessary to run this project.
 
@@ -58,4 +58,4 @@ Data for the shape of lakes and inland water bodies came from an asset in [G.Pro
 
 Data for cities across the world came from the free version of [this site](https://simplemaps.com/data/world-cities). 
 
-Icons come from random images found on Google search. Colour schemes are from matplotlib. Various Javascript libraries were used for handling PNG ([reimg.js](https://github.com/gillyb/reimg)), NPY ([npy-rw.js](https://gist.github.com/LingDong-/b24f172ba0888976143463a8801e2040)), GIF ([GIFEncoder.js](https://github.com/antimatter15/jsgif)) files. I also used Ajax from jQuery to send asynchronous POST requests.
+Icons come from random images found on Google search. Colour schemes are from matplotlib. Various Javascript libraries were used for handling PNG ([reimg.js](https://github.com/gillyb/reimg)), NPY ([npy-rw.js](https://gist.github.com/LingDong-/b24f172ba0888976143463a8801e2040)), and GIF ([GIFEncoder.js](https://github.com/antimatter15/jsgif)) files. I also used Ajax from jQuery to asynchronously send finished elevation maps to be processed.
