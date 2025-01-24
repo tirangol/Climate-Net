@@ -1,4 +1,6 @@
+<p align="center">
 ![Banner](screenshot/banner.png)
+</p>
 
 # Climate-Net
 
@@ -40,16 +42,21 @@ EXE file coming soon, if I can figure out how to do that.
 
 Users can upload images of elevation maps (equirectangular maps where colour is water and grayscale is shade) or NPY inputs, paste in 2D matrices of numbers (of the format `[[a, b, c, ...], ...]` or `[a, b, c, ... ; ...]`), select some presets, or generate random terrain maps.
 
+<p align="center">
 ![Part 1](screenshot/part1.gif)
+</p>
 
 Using the brush editor, they can make selections, transformations, and changes to the elevation map using a brush; the functionality is not unlike an image editing program such as Photoshop.
 
+<p align="center">
 ![Part 2](screenshot/part2.gif)
+</p>
 
 Upon completion, Climate Net generates visualizations of temperature, precipitation, climate classification system, individual pixel climate graphs, etc. for the given elevation map.
 
+<p align="center">
 ![Part 3](screenshot/part3.gif)
-
+</p>
 
 ## Backend
 
