@@ -27,7 +27,7 @@ The project used Python 3.10 with the following libraries:
 
 Only the first five listed libraries are necessary to run this project: the others were just for preprocessing.
 
-To get started, run `gui.py` on Python, either via your IDE or the command-line interface. After some time, Flask should specify a web address for you to go onto. The webpage has only been tested in Chrome and Edge on Windows. If something doesn't display right... welp.
+To get started, run `gui.py` on Python, either via your IDE or the command-line interface. After some time, Flask should specify a local web address for you to go onto.
 
 If you're only interested in running the frontend, download only the `static` and `template` folders. Go to `index.html` and comment out the backend imports and use the non-backend imports. Also, every `<img>` tag has a part containing `src="{{ url_for('static', filename='something') )}}"`; replace this with `src="../something"`. In `index.js`, go to the function `predictClimate`, uncomment the "No backend" part and comment the "Backend" part.
 
@@ -38,7 +38,17 @@ EXE file coming soon, if I can figure out how to do that.
 
 ## Frontend
 
-Users can upload images of elevation maps (equirectangular maps where colour is water and grayscale is shade) or NPY inputs, paste in 2D matrices of numbers (of the format `[[a, b, c, ...], ...]` or `[a, b, c, ... ; ...]`), select some presets, or generate random terrain maps.  Using the brush editor, they can make selections,  transformations, and changes to the elevation map using a brush; the functionality is not unlike an image editing program such as Photoshop. Upon completion, Climate Net generates visualizations of temperature, precipitation, climate classification system, individual pixel climate graphs, etc. for the given elevation map.
+Users can upload images of elevation maps (equirectangular maps where colour is water and grayscale is shade) or NPY inputs, paste in 2D matrices of numbers (of the format `[[a, b, c, ...], ...]` or `[a, b, c, ... ; ...]`), select some presets, or generate random terrain maps.
+
+[Part 1](screenshot/part1.gif)
+
+Using the brush editor, they can make selections, transformations, and changes to the elevation map using a brush; the functionality is not unlike an image editing program such as Photoshop.
+
+[Part 2](screenshot/part2.gif)
+
+Upon completion, Climate Net generates visualizations of temperature, precipitation, climate classification system, individual pixel climate graphs, etc. for the given elevation map.
+
+[Part 3](screenshot/part3.gif)
 
 
 ## Backend
@@ -59,7 +69,7 @@ The models are lightweight enough for a CPU (<10K parameters in total) and decen
 
 ## Sources
 
-Preset data for the [moon](https://svs.gsfc.nasa.gov/4720/) , [Mercury](https://astrogeology.usgs.gov/search/map/mercury_messenger_global_dem_665m), [Mars](https://astrogeology.usgs.gov/search/map/mars_mgs_mola_dem_463m), and Venus ([1](https://astrogeology.usgs.gov/search/map/venus_magellan_global_topography_4641m), [2](https://astrogeology.usgs.gov/search/map/venus_magellan_global_c3_mdir_colorized_topographic_mosaic_6600m)) are mostly from USA government websites. A lot of maps were H x 2H where the left and right H x H blocks were stretched and near-duplicate versions of the actual map, which was strange; they were also scaled to some unknown value, so I multiplied/divided them to roughly match actual minimums/maximums. There were two Venus elevation maps: a map with blanks, and a complete but colour-coded Venus elevation map with an unknown colour mapping. I fit a `HistGradientBoostingRegressor` between the coloured Venus's HSV to the elevation Venus map, and filled the blanks from there.
+Preset data for the [moon](https://svs.gsfc.nasa.gov/4720/) , [Mercury](https://astrogeology.usgs.gov/search/map/mercury_messenger_global_dem_665m), [Mars](https://astrogeology.usgs.gov/search/map/mars_mgs_mola_dem_463m), and Venus ([1](https://astrogeology.usgs.gov/search/map/venus_magellan_global_topography_4641m), [2](https://astrogeology.usgs.gov/search/map/venus_magellan_global_c3_mdir_colorized_topographic_mosaic_6600m)) are mostly from USA government websites. A lot of maps were H x 2H where the left and right H x H blocks were stretched, near-duplicate versions of the actual map, which was strange; they were also scaled to some unknown value, so I multiplied/divided them to roughly match actual minimums/maximums. There were two Venus elevation maps: a map with blanks, and a complete but colour-coded Venus elevation map with an unknown colour mapping. I fit a `HistGradientBoostingRegressor` between the coloured Venus's HSV to the elevation Venus map, and filled the blanks from there.
 
 The data for Earth's elevation, temperature, and precipitation are provided on [WorldClim](https://www.worldclim.org/data/worldclim21.html). The model was also trained on climate simulation data for a retrograde-spinning Earth, which was processed using `netCDF4` on data from this [website](https://www.wdc-climate.de/ui/entry?acronym=DKRZ_LTA_110_ds00001) based on [this paper](https://esd.copernicus.org/articles/9/1191/2018/#section9). The retrograde data's resolution of $48 \times 96$ made it rather tricky to train alongside the $180 \times 360$ data.
 
@@ -77,3 +87,5 @@ Icons come from random images found on Google search. Colour schemes are from ma
 `PrecipitationNet` is generally a lot less accurate because it was too difficult for me to algorithmically follow many of the tutorial steps for generating most important features. In general, it vastly underpredicts coastal precipitation and equatorial coastal regions (e.g. Indonesia, Panama) and overpredicts desert/tropic transition zones (e.g. the Sahel). There are also some abrupt precipiation transitions that are very suspect.
 
 Most of the future development time will probably be focused on improving the `PrecipitationNet` with better features.
+
+The webpage has not been thoroughly tested, so there may be bugs. Also, it has only been tested in Chrome and Edge on Windows. If something doesn't display right... welp.
