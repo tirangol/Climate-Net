@@ -7,11 +7,10 @@ import torch.nn as nn
 import os
 from scipy.ndimage import binary_erosion
 from preprocessing import gaussian_blur
-from lipschitz import LipschitzLinear
-from model_temp import TemperatureNet
+from model_temp import TemperatureNet, LipschitzLinear
 
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-DATA_PATH = r'climate net\final'
+DATA_PATH = r'C:\Users\guoli\Documents\Coding\python stuff\climate net\final'
 
 
 class Sobel(nn.Module):
