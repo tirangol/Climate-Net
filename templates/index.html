@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+    <title>Climate Net</title>
+	
+	<!--
+	npy.js - NPY export
+	gif.js - GIF export
+	reimg.js - PNG export
+	jquery.js - Send data to Climate Net
+	presets.js - Input presets
+	index.js - Main Javascript
+	dummydata.js - In lieu of a backend response
+	-->
+	
+	<!-- No Backend -->
+	<!--
+	<link rel="stylesheet" href="../static/index.css">
+	<script src="../static/npy.js"></script>
+	<script src="../static/gif.js"></script>
+	<script src="../static/reimg.js"></script>
+	<script src="../static/jquery.js"></script>
+	<script src="../static/presets.js"></script>
+	<script src="../static/cities.js"></script>
+	<script src="../static/index.js"></script>
+	<script src="../static/dummydata.js"></script>
+	-->
+	
+	<!-- Backend -->
+	<link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
+	<script src="{{ url_for('static', filename='npy.js') }}"></script>
+	<script src="{{ url_for('static', filename='gif.js') }}"></script>
+	<script src="{{ url_for('static', filename='reimg.js') }}"></script>
+	<script src="{{ url_for('static', filename='jquery.js') }}"></script>
+	<script src="{{ url_for('static', filename='presets.js') }}"></script>
+	<script src="{{ url_for('static', filename='cities.js') }}"></script>
+	<script src="{{ url_for('static', filename='index.js') }}"></script>
+</head>
+
+<body onload='init()'>
+	<div id='title-block'>
+		<a href='https://github.com/tirangol/Projects/tree/main/climate%20net' target='_blank'>
+			<h1><span id='h1-colour'>Climate</span> Net <span id='subtitle'>by tirangol</span></h1>
+			<h2>Neural Networks for Earth-like Climate Prediction</h2>
+		</a>
+	</div>
+	
+	<div id='map-block'>
+		<canvas id='map-canvas' width='360' height='180' oncontextmenu='return false;' onmousemove='onCanvasMouseHover(event)' onmouseleave="onCanvasMouseExit()" onmousedown='onCanvasMouseDown(event)' onmouseup='onCanvasMouseUp(event)'></canvas>
+		<canvas id='local-canvas' width='2000' height='1000' onclick='toggleLocalCanvas(event)' onmousemove='hoverLocalCanvas(event)'></canvas>
+		<div id='map-canvas-caption'>
+			<h4>0 m</h4>
+			<p>(0˚ N, 0˚ W)</p>
+		</div>
+		<div id='map-canvas-hover-pixel'></div>
+		<div id='map-canvas-brush-holder'>
+			<div id='map-canvas-brush'></div>
+			<div id='map-canvas-brush-looped'></div>
+		</div>
+	</div>
+	
+	<div id='colour-bar-block'>
+		<canvas id='colour-bar-canvas' width='50' height='500'></canvas>
+		<div id='colour-bar-text'></div>
+	</div>
+	
+	<div id='sidebar-block'>
+		<div id='part-1' class='sidebar-part'>
+			<h3>Part 1 – <span>Base Map</span></h3>
+			<p>Choose an equirectangular input map.</p>
+			
+			<div class='tab-container' id='tab-1'>
+				<span class='tab tab-1-active' id='tab-1-file' onclick='toggleTab(event)'>File</span>
+				<span class='tab' id='tab-1-text' onclick='toggleTab(event)'>Text</span>
+				<span class='tab' id='tab-1-preset' onclick='toggleTab(event)'>Preset</span>
+				<span class='tab' id='tab-1-random' onclick='toggleTab(event)'>Random</span>
+			</div>
+			<div class='tab-body-container' id='tab-body-1'>
+				<div class='tab-body' id='tab-body-1-file'>
+					<p>Import an image where grayscale is elevation and colour is water.</p>
+					<input type='file' id='input-file' onchange='inputFile()' accept='image/*,.npy'>
+					<p class='error-text' id='error-file'></p>
+					
+					<div class='form-obstruct-container'>
+						<div class='form-obstruct'>
+							<input type='text' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' id='file-min-elevation' data-min='-30000' data-max='30000' value='0m'>
+							<label for='file-min-elevation' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Minimum Elevation</label>
+							<br>
+							<input type='text' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' id='file-max-elevation' data-min='-30000' data-max='30000' value='6000m'>
+							<label for='file-max-elevation' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Maximum Elevation</label>
+							<br>
+							<input type='checkbox' onclick='setCheckbox(event)' id='min-elevation-as-water'>
+							<label for='min-elevation-as-water' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Minimum elevation as water</label>
+							<br>
+							<input type='checkbox' onclick='setCheckbox(event)' id='invert-image-shades'>
+							<label for='invert-image-shades' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Invert image shades</label>
+						</div>
+					</div>
+				</div>
+				<div class='tab-body' id='tab-body-1-text'>
+					<p>Paste an elevation matrix in meters.</p>
+					<input type='text' id='input-text' placeholder='e.g. [[a, b, c, ...], [d, e, f, ...], ...]' onfocusout='inputText()'>
+					<p class='error-text' id='error-text'></p>
+					
+					<div class='form-obstruct-container'>
+						<div class='form-obstruct'>
+							<input type='text' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' id='text-water-threshold' data-min='-30000' data-max='30000' value='0m'>
+							<label for='text-water-threshold' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Water threshold</label>
+							<br>
+							<input type='checkbox' onclick='setCheckbox(event)' id='swap-rows-cols'>
+							<label for='swap-rows-cols' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Swap rows and columns</label>
+						</div>
+					</div>
+				</div>
+				<div class='tab-body' id='tab-body-1-preset'>
+					<p>Select a preset map. Elevations in non-Earth maps are somewhat arbitrary.</p>
+					<input type='button' class='input-1-button' onclick='inputPreset(event)' value='Earth'>
+					<input type='button' class='input-1-button' onclick='inputPreset(event)' value='Earth (Cassini Projection)'>
+					<input type='button' class='input-1-button' onclick='inputPreset(event)' value='Moon'>
+					<input type='button' class='input-1-button' onclick='inputPreset(event)' value='Mercury'>
+					<input type='button' class='input-1-button' onclick='inputPreset(event)' value='Venus'>
+					<input type='button' class='input-1-button' onclick='inputPreset(event)' value='Mars'>
+				</div>
+				<div class='tab-body' id='tab-body-1-random'>
+					<p>Randomly generate elevation maps.</p>
+					<input type='button' class='input-1-button' onclick='inputRandom()' value='Generate Random Map'>
+					<br>
+					<div class='form-obstruct-container'>
+						<div class='form-obstruct'>
+							<input type='text' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' id='x-axis-rotation' data-min='-360' data-max='360' value='0˚'>
+							<label for='x-axis-rotation' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>X-axis rotation</label>
+							<br>
+							<input type='text' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' id='y-axis-rotation' data-min='-360' data-max='360' value='0˚'>
+							<label for='y-axis-rotation' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Y-axis rotation</label>
+							<br>
+							<input type='text' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' id='z-axis-rotation' data-min='-360' data-max='360' value='0˚'>
+							<label for='z-axis-rotation' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Z-axis rotation</label>
+							<br>
+							<input type='text' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' id='scale-elevation' data-min='-30000' data-max='30000' value='10000'>
+							<label for='scale-elevation' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Scale elevation</label>
+							<br>
+							<input type='text' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' id='offset-elevation' data-min='-30000' data-max='30000' value='0'>
+							<label for='offset-elevation' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Offset elevation</label>
+							<br>
+							<input type='text' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' id='random-water-threshold' data-min='-30000' data-max='30000' value='0m'>
+							<label for='random-water-threshold' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Water threshold</label>
+						</div>
+					</div>
+				</div>
+			</div>
+			<br>
+			<div id='button-next' onclick='part2()' class='button-unselectable button-blue'>Next</div>
+			<br>
+		</div>
+		
+		<div id='part-2' class='sidebar-part'>
+			<h3>Part 2 – <span>Editor</span></h3>
+			<p>Tweak the elevation map.</p>
+			
+			<div class='tab-container' id='tab-2'>
+				<!--
+				<span class='tab tab-2-active' id='tab-2-selection' onclick='toggleTab(event)'><img class='tab-icon' src='../static/assets/selection-rectangle.png'> Selection</span>
+				<span class='tab' id='tab-2-brush' onclick='toggleTab(event)'><img class='tab-icon' src='../static/assets/brush.png'> Brush</span>
+				<span class='tab' id='tab-2-transform' onclick='toggleTab(event)'><img class='tab-icon' src='../static/assets/transform.png'> Transform</span>
+				-->
+				<span class='tab tab-2-active' id='tab-2-selection' onclick='toggleTab(event)'><img class='tab-icon' src="{{ url_for('static', filename='assets/selection-rectangle.png') }}"> Selection</span>
+				<span class='tab' id='tab-2-brush' onclick='toggleTab(event)'><img class='tab-icon' src="{{ url_for('static', filename='assets/brush.png') }}"> Brush</span>
+				<span class='tab' id='tab-2-transform' onclick='toggleTab(event)'><img class='tab-icon' src="{{ url_for('static', filename='assets/transform.png') }}"> Transform</span>
+			</div>
+			<div class='tab-body-container' id='tab-body-2'>
+				<div class='tab-body' id='tab-body-2-selection'>
+					<table id='table-selection'>
+						<tr>
+							<td>Mode</td>
+							<td>
+								<div class='img-hoverable img-button-mode selection-mode-active' id='selection-new' onclick='toggleSelectionMode(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>
+									<!--
+									<img src='../static/assets/selection-new.png' class='selection-icon'>
+									-->
+									<img src="{{ url_for('static', filename='assets/selection-new.png') }}" class='selection-icon'>
+								</div>
+								<div class='img-hoverable img-button-mode' id='selection-union' onclick='toggleSelectionMode(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>
+									<!--
+									<img src='../static/assets/selection-union.png' class='selection-icon'>
+									-->
+									<img src="{{ url_for('static', filename='assets/selection-union.png') }}" class='selection-icon'>
+								</div>
+								<div class='img-hoverable img-button-mode' id='selection-intersection' onclick='toggleSelectionMode(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>
+									<!--
+									<img src='../static/assets/selection-intersection.png' class='selection-icon'>
+									-->
+									<img src="{{ url_for('static', filename='assets/selection-intersection.png') }}" class='selection-icon'>
+								</div>
+								<div class='img-hoverable img-button-mode' id='selection-subtraction' onclick='toggleSelectionMode(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>
+									<!--
+									<img src='../static/assets/selection-subtraction.png' class='selection-icon'>
+									-->
+									<img src="{{ url_for('static', filename='assets/selection-subtraction.png') }}" class='selection-icon'>
+								</div>
+								<div class='img-hoverable img-button-mode' id='selection-inversion' onclick='toggleSelectionMode(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>
+									<!--
+									<img src='../static/assets/selection-inversion.png' class='selection-icon'>
+									-->
+									<img src="{{ url_for('static', filename='assets/selection-inversion.png') }}" class='selection-icon'>
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td>Shape</td>
+							<td>
+								<div class='img-hoverable img-button-shape selection-shape-active' id='selection-rectangle' onclick='toggleSelectionShape(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>
+									<!--
+									<img src='../static/assets/selection-rectangle.png' class='selection-icon'>
+									-->
+									<img src="{{ url_for('static', filename='assets/selection-rectangle.png') }}" class='selection-icon'>
+								</div>
+								<div class='img-hoverable img-button-shape' id='selection-ellipse' onclick='toggleSelectionShape(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>
+									<!--
+									<img src='../static/assets/selection-ellipse.png' class='selection-icon'>
+									-->
+									<img src="{{ url_for('static', filename='assets/selection-ellipse.png') }}" class='selection-icon'>
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td>Modify</td>
+							<td>
+								<div class='img-hoverable img-button' id='selection-invert' onmousedown='selectionButton(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>
+									<!--
+									<img src='../static/assets/selection-invert.png' class='selection-icon'>
+									-->
+									<img src="{{ url_for('static', filename='assets/selection-invert.png') }}" class='selection-icon'>
+								</div>
+								<div class='img-hoverable img-button' id='selection-expand' onmousedown='selectionButton(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>
+									<!--
+									<img src='../static/assets/selection-expand.png' class='selection-icon'>
+									-->
+									<img src="{{ url_for('static', filename='assets/selection-expand.png') }}" class='selection-icon'>
+								</div>
+								<div class='img-hoverable img-button' id='selection-contract' onmousedown='selectionButton(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>
+									<!--
+									<img src='../static/assets/selection-contract.png' class='selection-icon'>
+									-->
+									<img src="{{ url_for('static', filename='assets/selection-contract.png') }}" class='selection-icon'>
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td>Select</td>
+							<td id='selection-td'>
+								<div class='img-hoverable img-button' id='selection-land' onmousedown='selectionButton(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)' onmouseup='imgButtonTextnumInactive(event)'>
+									<!--
+									<img src='../static/assets/land.png' class='selection-icon'>
+									-->
+									<img src="{{ url_for('static', filename='assets/land.png') }}" class='selection-icon'>
+								</div>
+								<div class='img-hoverable img-button' id='selection-water' onmousedown='selectionButton(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)' onmouseup='imgButtonTextnumInactive(event)'>
+									<!--
+									<img src='../static/assets/water.png' class='selection-icon'>
+									-->
+									<img src="{{ url_for('static', filename='assets/water.png') }}" class='selection-icon'>
+								</div>
+								<div class='img-button-textnum' id='selection-above-textnum' onmousedown='selectionButton(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)' onmouseup='imgButtonTextnumInactive(event)'>
+									≥<input type='text' id='selection-above' class='textnum textnum-inner' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' data-min='-30000' data-max='30000' value='0'>
+								</div>
+								<div class='img-button-textnum' id='selection-below-textnum' onmousedown='selectionButton(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)' onmouseup='imgButtonTextnumInactive(event)'>
+									≤<input type='text' id='selection-below' class='textnum textnum-inner' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' data-min='-30000' data-max='30000' value='0'>
+								</div>
+								<div class='img-button-textnum' id='selection-near-textnum' onmousedown='selectionButton(event)' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)' onmouseup='imgButtonTextnumInactive(event)'>
+									<input type='text' id='selection-min' class='textnum textnum-inner' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' data-min='-30000' data-max='30000' value='0'>-<input type='text' id='selection-max' class='textnum textnum-inner' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' data-min='-30000' data-max='30000' value='0'>
+								</div>
+							</td>
+						</tr>
+					</table>
+				</div>
+				<div class='tab-body' id='tab-body-2-brush'>
+					<table id='table-brush'>
+						<tr>
+							<td><label id='brush-mode' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Mode</label></td>
+							<td colspan='4'>
+								<div class='button-selector brush-mode-active' id='brush-mode-elevation' onclick='toggleBrushMode(event)'>Elevation</div>
+								<div class='button-selector' id='brush-mode-selection' onclick='toggleBrushMode(event)'>Select</div>
+								<div class='button-selector' id='brush-mode-land' onclick='toggleBrushMode(event)'>Land</div>
+								<div class='button-selector' id='brush-mode-water' onclick='toggleBrushMode(event)'>Water</div>
+							</td>
+						</tr>
+						<tr>
+							<td><label for='brush-size' id='brush-size-label' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Size</label></td>
+							<!--
+							<td><img src='../static/assets/small.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/small.png') }}" class='brush-icon'></td>
+							<td><input type='range' id='brush-size' class='slider' min='1' max='360' value='5' oninput='setSlider(event)'></td>
+							<!--
+							<td><img src='../static/assets/big.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/big.png') }}" class='brush-icon'></td>
+							<td><input type='text' id='brush-size-textnum' class='textnum-slider' value='5px' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnumSlider(event)'></td>
+						</tr>
+						<tr class='row-brush-elevation-only'>
+							<td><label for='brush-hardness' id='brush-hardness-label' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Hardness</label></td>
+							<!--
+							<td><img src='../static/assets/soft.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/soft.png') }}" class='brush-icon'></td>
+							<td><input type='range' id='brush-hardness' class='slider' min='0' max='100' value='50' oninput='setSlider(event)'></td>
+							<!--
+							<td><img src='../static/assets/normal.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/normal.png') }}" class='brush-icon'></td>
+							<td><input type='text' id='brush-hardness-textnum' class='textnum-slider' value='50%' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnumSlider(event)'></td>
+						</tr>
+						<tr class='row-brush-elevation-only'>
+							<td><label for='brush-noise' id='brush-noise-label' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Noise</label></td>
+							<!--
+							<td><img src='../static/assets/normal.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/normal.png') }}" class='brush-icon'></td>
+							<td><input type='range' id='brush-noise' class='slider' min='0' max='10000' value='0' oninput='setSlider(event)'></td>
+							<!--
+							<td><img src='../static/assets/noise.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/noise.png') }}" class='brush-icon'></td>
+							<td><input type='text' id='brush-noise-textnum' class='textnum-slider' value='0m' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnumSlider(event)'></td>
+						</tr>
+						<tr>
+							<td><label for='brush-distortion' id='brush-distortion-label' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Distortion</label></td>
+							<!--
+							<td><img src='../static/assets/normal.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/normal.png') }}" class='brush-icon'></td>
+							<td><input type='range' id='brush-distortion' class='slider' min='0' max='100' value='50' oninput='setSlider(event)'></td>
+							<!--
+							<td><img src='../static/assets/distortion.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/distortion.png') }}" class='brush-icon'></td>
+							<td><input type='text' id='brush-distortion-textnum' class='textnum-slider' value='50%' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnumSlider(event)'></td>
+						</tr>
+						<tr class='row-brush-elevation-only'>
+							<td><label for='brush-threshold' id='brush-threshold-label' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Threshold</label></td>
+							<!--
+							<td><img src='../static/assets/water.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/water.png') }}" class='brush-icon'></td>
+							<td><input type='range' id='brush-threshold' class='slider' min='-30001' max='30000' value='-30001' oninput='setSlider(event)'></td>
+							<!--
+							<td><img src='../static/assets/land.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/land.png') }}" class='brush-icon'></td>
+							<td><input type='text' id='brush-threshold-textnum' class='textnum-slider' value='OFF' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnumSlider(event)'></td>
+						</tr>
+						<tr class='row-brush-elevation-only'>
+							<td><label for='brush-elevation' id='brush-elevation-label' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Elevation</label></td>
+							<!--
+							<td><img src='../static/assets/decrease.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/decrease.png') }}" class='brush-icon'></td>
+							<td><input type='range' id='brush-elevation' class='slider' min='-2000' max='2000' value='0' oninput='setSlider(event)'></td>
+							<!--
+							<td><img src='../static/assets/increase.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/increase.png') }}" class='brush-icon'></td>
+							<td><input type='text' id='brush-elevation-textnum' class='textnum-slider' value='0px' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnumSlider(event)'></td>
+						</tr>
+						<tr>
+							<td><label for='brush-longitude' id='brush-longitude-label' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Longitude</label></td>
+							<!--
+							<td><img src='../static/assets/west.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/west.png') }}" class='brush-icon'></td>
+							<td><input type='range' id='brush-longitude' class='slider' min='-360' max='360' value='0' oninput='setSlider(event)'></td>
+							<!--
+							<td><img src='../static/assets/east.png' class='brush-icon'></td>
+							-->
+							<td><img src="{{ url_for('static', filename='assets/east.png') }}" class='brush-icon'></td>
+							<td><input type='text' id='brush-longitude-textnum' class='textnum-slider' value='0˚' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnumSlider(event)'></td>
+						</tr>
+					</table>
+				</div>
+				<div class='tab-body' id='tab-body-2-transform'>
+					<table id='table-transform'>
+						<tr>
+							<td><label id='transform-flip-map' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Flip Map</label></td>
+							<td colspan='2'><input type='button' id='transform-flip-lr' class='button-transform' value='↔' onclick='transformButton(event)'><input type='button' id='transform-flip-ud' class='button-transform' value='↕' onclick='transformButton(event)'></td>
+						</tr>
+						<tr>
+							<td><label id='transform-set-terrain' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Set Terrain</label></td>
+							<td colspan='2'><input type='button' id='transform-land' class='button-transform' value='Land' onclick='transformButton(event)'><input type='button' id='transform-water' class='button-transform' value='Water' onclick='transformButton(event)'></td>
+						</tr>
+						<tr>
+							<td><label id='transform-set-elevation' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Set Elevation</label></td>
+							<td>×<input type='text' id='transform-multiply-elevation' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' data-min='-30000' data-max='30000' value='1'>+<input type='text' id='transform-add-elevation' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' data-min='-30000' data-max='30000' value='0'></td>
+							<td><input id='transform-set-elevation-confirm' type='button' class='button-transform-confirm' value='Confirm' onclick='transformButton(event)'></td>
+						</tr>
+						<tr>
+							<td><label id='transform-set-range' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Set Range</label></td>
+							<td><input type='text' id='transform-min-elevation' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' data-min='-30000' data-max='30000' value='0m'>-<input type='text' id='transform-max-elevation' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' data-min='-30000' data-max='30000' value='0m'></td>
+							<td><input id='transform-set-range-confirm' type='button' class='button-transform-confirm' value='Confirm' onclick='transformButton(event)'></td>
+						</tr>
+						<tr>
+							<td><label for='transform-threshold' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Threshold</label></td>
+							<td><input type='text' id='transform-threshold' class='textnum' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' data-min='-30000' data-max='30000' value='0m'></td>
+							<td><input id='transform-threshold-confirm' type='button' class='button-transform-confirm' value='Confirm' onclick='transformButton(event)'></td>
+						</tr>
+					</table>
+				</div>
+			</div>
+			<input type='button' id='save-state' value='Save State' onclick='saveState()'><input type='button' id='revert-state' value='Revert State' onclick='revertState()'><input type='button' id='reset' value='Reset All' onclick='resetAll()'>
+			<br>
+			<br>
+			<input type='submit' value='Predict Climate' class='button-blue' id='button-predict' onclick='predictClimate()'>
+			<input type='button' id='button-export' class='button-red' value='Export' onclick='enterSaveMenu()'>
+			<div class='back button-gray' onclick='part1()'>Back</div>
+			<br>
+		</div>
+		
+		<div id='part-3' class='sidebar-part'>
+			<h3>Part 3 – <span>Results</span></h3>
+			<p>View the neural net's predictions.</p>
+			
+			<div class='tab-container' id='tab-3'>
+				<span class='tab tab-3-active' id='tab-3-global' onclick='toggleTab(event)'>Global Climate</span>
+				<span class='tab' id='tab-3-local' onclick='toggleTab(event)'>Local Climate</span>
+				<span class='tab' id='tab-3-statistics' onclick='toggleTab(event)'>Statistics</span>
+			</div>
+			<div class='tab-body-container' id='tab-body-3'>
+				<div class='tab-body' id='tab-body-3-global'>
+					<div class='button-selector global-active' id='global-classification' onclick='toggleGlobal(event)'>Classification</div>
+					<div class='button-selector' id='global-temperature' onclick='toggleGlobal(event)'>Temperature</div>
+					<div class='button-selector' id='global-precipitation' onclick='toggleGlobal(event)'>Precipitation</div>
+					
+					<div id='month-slider-connector'></div>
+					<div id='month-slider' onmousemove='scrollMonthSlider(event)' onmousedown='clickMonthSlider(event)' onwheel='wheelMonthSlider(event)' tabindex='0'>
+						<div id='month-slider-circle-0' class='month-slider-circle month-slider-circle-active'><span></span></div>
+						<div id='month-slider-circle-1' class='month-slider-circle'><span></span></div>
+						<div id='month-slider-circle-2' class='month-slider-circle'><span></span></div>
+						<div id='month-slider-circle-3' class='month-slider-circle'><span></span></div>
+						<div id='month-slider-circle-4' class='month-slider-circle'><span></span></div>
+						<div id='month-slider-circle-5' class='month-slider-circle'><span></span></div>
+						<div id='month-slider-circle-6' class='month-slider-circle'><span></span></div>
+						<div id='month-slider-circle-7' class='month-slider-circle'><span></span></div>
+						<div id='month-slider-circle-8' class='month-slider-circle'><span></span></div>
+						<div id='month-slider-circle-9' class='month-slider-circle'><span></span></div>
+						<div id='month-slider-circle-10' class='month-slider-circle'><span></span></div>
+						<div id='month-slider-circle-11' class='month-slider-circle'><span></span></div>
+						<div id='month-slider-text-0' class='month-slider-text month-slider-text-active'>Jan</div>
+						<div id='month-slider-text-1' class='month-slider-text'>Feb</div>
+						<div id='month-slider-text-2' class='month-slider-text'>Mar</div>
+						<div id='month-slider-text-3' class='month-slider-text'>Apr</div>
+						<div id='month-slider-text-4' class='month-slider-text'>May</div>
+						<div id='month-slider-text-5' class='month-slider-text'>Jun</div>
+						<div id='month-slider-text-6' class='month-slider-text'>Jul</div>
+						<div id='month-slider-text-7' class='month-slider-text'>Aug</div>
+						<div id='month-slider-text-8' class='month-slider-text'>Sep</div>
+						<div id='month-slider-text-9' class='month-slider-text'>Oct</div>
+						<div id='month-slider-text-10' class='month-slider-text'>Nov</div>
+						<div id='month-slider-text-11' class='month-slider-text'>Dec</div>
+					</div>
+					
+					<div id='form-global-classification'>
+						<input type='radio' id='global-classification-koppen' name='global-classification' value='global-classification-koppen' oninput='setRadio()' checked='checked'>
+						<label class='global-classification-label' id='global-classification-koppen-label' for='global-classification-koppen'>Köppen-Geiger</label>
+						<br>
+						<input type='radio' id='global-classification-trewartha' name='global-classification' value='global-classification-trewartha' oninput='setRadio()'>
+						<label class='global-classification-label' id='global-classification-trewartha-label' for='global-classification-trewartha'>Köppen-Trewartha</label>
+					</div>
+					<div id='form-global-not-classification'>
+						<select id='colour-scheme' onchange='drawResult()'>
+							<option value='viridis'>Viridis</option>
+							<option value='plasma'>Plasma</option>
+							<option value='inferno'>Inferno</option>
+							<option value='magma'>Magma</option>
+							<option value='cividis'>Cividis</option>
+							<option value='Greys'>Greys</option>
+							<option value='Blues'>Blues</option>
+							<option value='YlGnBu'>Yellow-Green-Blue</option>
+							<option value='RdBu'>Red-Blue</option>
+							<option value='RdYlBu'>Red-Yellow-Blue</option>
+							<option value='Spectral'>Spectral</option>
+							<option value='coolwarm'>Coolwarm</option>
+							<option value='bwr'>Blue-White-Red</option>
+							<option value='seismic'>Seismic</option>
+						</select>						
+						<label for='colour-scheme' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Colour scheme</label>
+						<br>
+						<input type='color' id='water-colour' oninput='drawResult()'>
+						<label for='water-colour' id='water-colour-label' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Water colour</label>
+					</div>
+					<div id='form-global-temperature'>
+						<input type='checkbox' onclick='setCheckbox(event)' id='zero-centered-colour'>
+						<label for='zero-centered-colour' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Zero-centered colour</label>
+					</div>
+					<div id='form-global-precipitation'>
+						<input type='checkbox' onclick='setCheckbox(event)' id='logarithmic-scale'>
+						<label for='logarithmic-scale' onmouseenter='enterLabel(event)' onmouseleave='leaveLabel(event)'>Logarithmic scale</label>					
+					</div>
+				</div>
+				<div class='tab-body' id='tab-body-3-local'>
+					<canvas id='local-mini-canvas' width='2000' height='1000' onclick='toggleLocalCanvas(event)'></canvas>
+					<h4 id='local-pixel'></h4>
+					<p id='local-similar-cities'></p>
+				</div>
+				<div class='tab-body' id='tab-body-3-statistics'>
+					<div class='button-selector statistics-active' id='statistics-general' onclick='toggleStatistics(event)'>General</div>
+					<div class='button-selector' id='statistics-latitude' onclick='toggleStatistics(event)'>Area by Latitude</div>
+					<div class='button-selector' id='statistics-elevation' onclick='toggleStatistics(event)'>Area by Elevation</div>
+					
+					<table id='table-statistics-general'>
+						<tr>
+							<td>Name</td>
+							<td>At/Range</td>
+							<td>Value</td>
+							<td>Earth</td>
+						</tr>
+						<tr>
+							<td>Lowest point [m]</td>
+							<td>0˚ N, 0˚ W</td>
+							<td>xx</td>
+							<td>-430</td>
+						</tr>
+						<tr>
+							<td>Highest point [m]</td>
+							<td>0˚ N, 0˚ W</td>
+							<td>xx</td>
+							<td>8848</td>
+						</tr>
+						<tr>
+							<td>Farthest point from land [km]</td>
+							<td>0˚ N, 0˚ W</td>
+							<td>xx</td>
+							<td>2688</td>
+						</tr>
+						<tr>
+							<td>Farthest point from water [km]</td>
+							<td>0˚ N, 0˚ W</td>
+							<td>xx</td>
+							<td>2514</td>
+						</tr>
+						<tr>
+							<td>Land area [%]</td>
+							<td>xx - xx</td>
+							<td>xx</td>
+							<td>29.20</td>
+						</tr>
+						
+					</table>
+					<canvas id='latitude-canvas' width='2000' height='1200'></canvas>
+					<canvas id='elevation-canvas' width='2000' height='1200'></canvas>
+				</div>
+			</div>
+			<br>
+			<input type='button' id='button-download' class='button-red' value='Download Outputs' onclick='enterSaveMenu()'>
+			<div class='back button-gray' onclick='part2()'>Back</div>
+			<br>
+		</div>
+	</div>
+	
+	<div id='save-block'>
+		<div id='save-overlay' onclick='leaveSaveMenu()'></div>
+		<div id='export' class='save-body'>
+			<h3>Export Map</h3>
+			<p>Download the edited elevation map. Note that PNGs save the canvas, not the underlying elevation data. Terrain (i.e. land/water) is also not saved.</p>
+			<div class='file-format' onclick='exportData(event)'><span>PNG</span> // Low-resolution image format</div>
+			<div class='file-format' onclick='exportData(event)'><span>NPY</span> // High-resolution Numpy format</div>
+			<div class='file-format' onclick='exportData(event)'><span>TXT</span> // High-resolution text format</div>
+			<p>Alternatively, save the text below somewhere:</p>
+			<textarea readonly id='copyable'></textarea>
+		</div>
+		<div id='download' class='save-body'>
+			<h3>Download Outputs</h3>
+			<p>Download the predictions of Climate Net as they appear on the canvas. 1-month NPYs are (180, 360); 12-month NPYs are (12, 180, 360).</p>
+			<div id='download-gif' class='file-format' onclick='downloadData(event)' onmouseleave='leaveDownloadDropdown(event)'>
+				<span>GIF</span> // Of
+				<div id='download-gif-item' class='download-selector' onclick='clickDownloadDropdown(event)'>
+					<div class='download-selector-active'>Temperature</div>
+					<div class='download-selector-options'>
+						<div class='download-selector-option'>Temperature</div>
+						<div class='download-selector-option'>Precipitation</div>
+					</div>
+				</div> with frame length
+				<input type='text' class='textnum-save' id='frame-length' data-min='1ms' data-max='10000ms' value='100ms' onfocusin='beforeSetTextnum(event)' onfocusout='setTextnum(event)' >
+			</div>
+			<div id='download-png' class='file-format' onclick='downloadData(event)' onmouseleave='leaveDownloadDropdown(event)'>
+				<span>PNG</span> // Of
+				<div id='download-png-item' class='download-selector' onclick='clickDownloadDropdown(event)'>
+					<div class='download-selector-active'>Temperature</div>
+					<div class='download-selector-options'>
+						<div class='download-selector-option'>Temperature</div>
+						<div class='download-selector-option'>Precipitation</div>
+						<div class='download-selector-option'>Köppen-Geiger</div>
+						<div class='download-selector-option'>Köppen-Trewartha</div>
+						<div class='download-selector-option' id='option-local-climate'>Local Climate</div>
+						<div class='download-selector-option'>Area by Latitude</div>
+						<div class='download-selector-option'>Area by Elevation</div>
+					</div>
+				</div>
+				<div class='download-month-part'>for
+					<div id='download-png-month' class='download-selector' onclick='clickDownloadDropdown(event)'>
+						<div class='download-selector-active'>January</div>
+						<div class='download-selector-options'>
+							<div class='download-selector-option'>January</div>
+							<div class='download-selector-option'>February</div>
+							<div class='download-selector-option'>March</div>
+							<div class='download-selector-option'>April</div>
+							<div class='download-selector-option'>May</div>
+							<div class='download-selector-option'>June</div>
+							<div class='download-selector-option'>July</div>
+							<div class='download-selector-option'>August</div>
+							<div class='download-selector-option'>September</div>
+							<div class='download-selector-option'>October</div>
+							<div class='download-selector-option'>November</div>
+							<div class='download-selector-option'>December</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div id='download-npy' class='file-format' onclick='downloadData(event)' onmouseleave='leaveDownloadDropdown(event)'>
+				<span>NPY</span> // Of
+				<div id='download-npy-item' class='download-selector' onclick='clickDownloadDropdown(event)'>
+					<div class='download-selector-active'>Temperature</div>
+					<div class='download-selector-options'>
+						<div class='download-selector-option'>Temperature</div>
+						<div class='download-selector-option'>Precipitation</div>
+						<div class='download-selector-option'>Köppen-Geiger</div>
+						<div class='download-selector-option'>Köppen-Trewartha</div>
+					</div>
+				</div>
+				<div class='download-month-part'>for
+					<div id='download-npy-month' class='download-selector' onclick='clickDownloadDropdown(event)'>
+						<div class='download-selector-active'>All Months</div>
+						<div class='download-selector-options'>
+							<div class='download-selector-option'>All Months</div>
+							<div class='download-selector-option'>January</div>
+							<div class='download-selector-option'>February</div>
+							<div class='download-selector-option'>March</div>
+							<div class='download-selector-option'>April</div>
+							<div class='download-selector-option'>May</div>
+							<div class='download-selector-option'>June</div>
+							<div class='download-selector-option'>July</div>
+							<div class='download-selector-option'>August</div>
+							<div class='download-selector-option'>September</div>
+							<div class='download-selector-option'>October</div>
+							<div class='download-selector-option'>November</div>
+							<div class='download-selector-option'>December</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div id='download-txt' class='file-format' onclick='downloadData(event)' onmouseleave='leaveDownloadDropdown(event)'>
+				<span>TXT</span> // Of
+				<div id='download-txt-item' class='download-selector' onclick='clickDownloadDropdown(event)'>
+					<div class='download-selector-active'>Temperature</div>
+					<div class='download-selector-options'>
+						<div class='download-selector-option'>Temperature</div>
+						<div class='download-selector-option'>Precipitation</div>
+						<div class='download-selector-option'>Köppen-Geiger</div>
+						<div class='download-selector-option'>Köppen-Trewartha</div>
+					</div>
+				</div>
+				<div class='download-month-part'>for
+					<div id='download-txt-month' class='download-selector' onclick='clickDownloadDropdown(event)'>
+						<div class='download-selector-active'>All Months</div>
+						<div class='download-selector-options'>
+							<div class='download-selector-option'>All Months</div>
+							<div class='download-selector-option'>January</div>
+							<div class='download-selector-option'>February</div>
+							<div class='download-selector-option'>March</div>
+							<div class='download-selector-option'>April</div>
+							<div class='download-selector-option'>May</div>
+							<div class='download-selector-option'>June</div>
+							<div class='download-selector-option'>July</div>
+							<div class='download-selector-option'>August</div>
+							<div class='download-selector-option'>September</div>
+							<div class='download-selector-option'>October</div>
+							<div class='download-selector-option'>November</div>
+							<div class='download-selector-option'>December</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<p>The climate zones in climate classification maps are saved as integers that are ordered as they appear top-to-bottom on the colour bar.</p>
+		</div>
+	</div>
+	
+	<div id='caption-block'>
+		<!-- Part 1 -->
+		<span id='file-min-elevation-caption' class='caption'>The lowest possible elevation of the base map.</span>
+		<span id='file-max-elevation-caption' class='caption'>The highest possible elevation of the base map.</span>
+		<span id='min-elevation-as-water-caption' class='caption'>Use the lowest elevation as water instead of colour.</span>
+		<span id='invert-image-shades-caption' class='caption'>Swap the colours that the lowest/highest elevations map to.</span>
+		
+		<span id='text-water-threshold-caption' class='caption'>Elevations above this value are set to land, while elevations below it are set to water.</span>
+		<span id='swap-rows-cols-caption' class='caption'>Invert the x-axis and y-axis of the map; take the matrix transpose.</span>
+		
+		<span id='x-axis-rotation-caption' class='caption'>Rotate the 3D random base map about the x-axis.</span>
+		<span id='y-axis-rotation-caption' class='caption'>Rotate the 3D random base map about the y-axis.</span>
+		<span id='z-axis-rotation-caption' class='caption'>Rotate the 3D random base map about the z-axis.</span>
+		<span id='scale-elevation-caption' class='caption'>This value is multiplied by every pixel's elevation in the base map.</span>
+		<span id='offset-elevation-caption' class='caption'>This value is added to every pixel's elevation in the base map.</span>
+		<span id='random-water-threshold-caption' class='caption'>Elevations above this value are set to land, while elevations below it are set to water.</span>
+			
+		<!-- Part 2 -->
+		<span id='selection-new-caption' class='caption'>Make a new selection.</span>
+		<span id='selection-union-caption' class='caption'>Add the new selection to the current selection.</span>
+		<span id='selection-intersection-caption' class='caption'>Keep the pixels in both the new and current selection.</span>
+		<span id='selection-subtraction-caption' class='caption'>Remove the new selection from the current selection.</span>
+		<span id='selection-inversion-caption' class='caption'>Keep the pixels in either the new or current selection but not both.</span>
+		
+		<span id='selection-rectangle-caption' class='caption'>The mouse makes rectangular selections.</span>
+		<span id='selection-ellipse-caption' class='caption'>The mouse makes elliptical selections.</span>
+		
+		<span id='selection-invert-caption' class='caption'>Invert the current selection.</span>
+		<span id='selection-expand-caption' class='caption'>Expand the current selection by one pixel.</span>
+		<span id='selection-contract-caption' class='caption'>Contract the current selection by one pixel.</span>
+		
+		<span id='selection-land-caption' class='caption'>Select all land pixels.</span>
+		<span id='selection-water-caption' class='caption'>Select all water pixels.</span>
+		<span id='selection-above-textnum-caption' class='caption'>Select all pixels with elevation above a threshold value.</span>
+		<span id='selection-below-textnum-caption' class='caption'>Select all pixels with elevation below a threshold value.</span>
+		<span id='selection-near-textnum-caption' class='caption'>Select all pixels with elevation between two values.</span>
+			
+		<span id='brush-mode-caption' class='caption'>Change whether the brush affects elevation, makes selections, or sets terrain.</span>
+		<span id='brush-size-caption' class='caption'>Change the radius of the brush circle.</span>
+		<span id='brush-hardness-caption' class='caption'>Change the blurriness/hardness of the brush.</span>
+		<span id='brush-noise-caption' class='caption'>Change the noisiness of the brush texture.</span>
+		<span id='brush-distortion-caption' class='caption'>Change the brush shape continuously to match the distortion of equirectangular projection.</span>
+		<span id='brush-threshold-caption' class='caption'>After changing elevation, set the pixel to land or water based on a threshold.</span>
+		<span id='brush-elevation-caption' class='caption'>Change what the brush affects elevation by.</span>
+		<span id='brush-longitude-caption' class='caption'>Shift the entire map left or right.</span>
+		
+		<span id='transform-flip-map-caption' class='caption'>Flip the entire map vertically or horizontally.</span>
+		<span id='transform-set-terrain-caption' class='caption'>Set the current selection's pixels to land or water.</span>
+		<span id='transform-set-elevation-caption' class='caption'>Modify the elevation of the current selection's pixels.</span>
+		<span id='transform-set-range-caption' class='caption'>Rescale the elevation of the current selection's pixels to a given minimum and maximum.</span>
+		<span id='transform-threshold-caption' class='caption'>Set the current selection's pixels to land or water based on a threshold.</span>
+		
+		<!-- Part 3 -->
+		<span id='colour-scheme-caption' class='caption'>Choose a colour scheme to display the data.</span>
+		<span id='water-colour-caption' class='caption'>Change the colour with which water masses are displayed.</span>
+		<span id='zero-centered-colour-caption' class='caption'>Scale the colours so that 0 is the center. Ideal for diverging colour schemes.</span>
+		<span id='logarithmic-scale-caption' class='caption'>Plot ln(x + 1) instead of x to better visualize low-precipitation pixels.</span>
+	</div>
+</body>
+</html>
