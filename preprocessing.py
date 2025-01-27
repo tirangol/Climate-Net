@@ -85,11 +85,11 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 # ImageFile.LOAD_TRUNCATED_IMAGES = True
 # Image.MAX_IMAGE_PIXELS = None
-# LAKE_PATH = r'climate\data\elevation'
-# ELEVATION_PATH = r'climate\data\elevation'
-# PRECIPITATION_PATH = r'climate\data\precipitation'
-# TEMPERATURE_PATH = r'climate\data\temperature_average'
-# RETROGRADE_PATH = r'climate'
+# LAKE_PATH = r'C:\Users\guoli\Documents\Coding\python stuff\climate\data\elevation'
+# ELEVATION_PATH = r'C:\Users\guoli\Documents\Coding\python stuff\climate\data\elevation'
+# PRECIPITATION_PATH = r'C:\Users\guoli\Documents\Coding\python stuff\climate\data\precipitation'
+# TEMPERATURE_PATH = r'C:\Users\guoli\Documents\Coding\python stuff\climate\data\temperature_average'
+# RETROGRADE_PATH = r'C:\Users\guoli\Documents\Coding\python stuff\climate'
 
 
 ####################################################################################################

@@ -15,19 +15,20 @@ The project used Python 3.10 with the following libraries:
 
 - `numpy` 1.26.4
 - `scipy` 1.14.1
-- `torch` 2.4.1
+- `pytorch` 2.4.1
 - `torchvision` 0.19.1
-- `flask`  3.0.3
+- `flask` 3.0.3
+- `pywebview` 5.3.2
 - `netCDF4` 1.7.2
 - `pillow` 11.0.0
 - `matplotlib` 3.9.2
-- `sklearn` 1.5.2
+- `scikit-learn` 1.5.2
 - `tqdm` 4.62.3
 - `pandas` 2.2.3
 
-Only the first five listed libraries are necessary to run this project: the others were just for preprocessing.
+Only the first six listed libraries are necessary to run this project: the others were just for preprocessing.
 
-To get started, run `gui.py` on Python, either via your IDE or the command-line interface. After some time, Flask should specify a local web address for you to go onto.
+To get started, run `gui.py` on Python, either via your IDE or the command-line interface. After some time, a GUI should automatically pop up.
 
 If you're only interested in running the frontend, download only the `static` and `template` folders. Go to `index.html` and comment out the backend imports and use the non-backend imports. Also, every `<img>` tag has a part containing `src="{{ url_for('static', filename='something') )}}"`; replace this with `src="../something"`. In `index.js`, go to the function `predictClimate`, uncomment the "No backend" part and comment the "Backend" part.
 

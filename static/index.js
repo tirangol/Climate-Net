@@ -1657,6 +1657,8 @@ function selectionButton(event) {
 	} else if (id == 'selection-near-textnum') {
 		selection = selectionNear();
 		imgButtonTextnumActive(event);
+	} else {
+		throw new Error(id);
 	}
 	if (!modify)
 		selection = combineSelections(SELECTION, selection);
@@ -1869,8 +1871,12 @@ function updateSelectionBounds(min, max) {
 			min = Math.min(min, item);
 			max = Math.max(max, item);
 		});
+		if (!isFinite(min))
+			return;
 	}
-	SELECTION_BOUNDS = [min, max];
+	if (min != null)
+		SELECTION_BOUNDS = [min, max];
+ 		
 	const transformMinElevation = cssGetId('transform-min-elevation');
 	const transformMaxElevation = cssGetId('transform-max-elevation');
 	transformMinElevation.value = `${min}${FORM_VALUES['transform-min-elevation'][0]}`;
@@ -1950,6 +1956,7 @@ function brushDown(event) {
 
 		iterateEllipse(centerX, centerY, radiusX, radiusY, (y, x) => {
 			const X = (x + longitudeOffset + W) % W; // X = actual matrix, x = drawing
+			y = y % H;
 			const hash = hashIntCoord(X, y);
 
 			if (SELECTION.has(hash)) {
@@ -2010,16 +2017,15 @@ function getNoiseValue(j, i, noise, skips) {
 }
 function interpolateNoise(skip, i, j) {
 	if (skip == 1)
-		return RANDOM_MAP_2D[i][j];
-
-	const prevI = Math.floor(i / skip) * skip;
+		return RANDOM_MAP_2D[i % H][j % W];
+	const prevI = (Math.floor(i / skip) * skip) % H;
 	const nextI = (prevI + skip) % H;
-	const prevJ = Math.floor(j / skip) * skip;
+	const prevJ = (Math.floor(j / skip) * skip) % W;
 	const nextJ = (prevJ + skip) % W;
-
+		
 	const weightI = (i - prevI) / skip;
 	const weightJ = (j - prevJ) / skip;
-
+	
 	const upper = RANDOM_MAP_2D[prevI][prevJ] * (1 - weightJ) + RANDOM_MAP_2D[prevI][nextJ] * weightJ;
 	const lower = RANDOM_MAP_2D[nextI][prevJ] * (1 - weightJ) + RANDOM_MAP_2D[nextI][nextJ] * weightJ;
 	return upper * (1 - weightI) + lower * weightI;
@@ -2038,6 +2044,8 @@ function transformButton(event) {
 		[changes, type] = transformFlip(false);
 	} else if (id == 'transform-flip-ud') {
 		[changes, type] = transformFlip(true);
+	} else if (SELECTION.size == 0) {
+		return;
 	} else if (id == 'transform-land') {
 		[changes, type] = transformTerrain(false);
 	} else if (id == 'transform-water') {
@@ -2182,8 +2190,6 @@ function predictClimate() {
 	if (NO_NEW_MODIFICATIONS)
 		return part3();
 	togglePredictBusy();
-	
-	// TODO threshold not being applied
 
 	// No backend
 	/*

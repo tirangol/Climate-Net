@@ -5,12 +5,12 @@ from torch import Tensor
 from torchvision.transforms import Resize, InterpolationMode
 import torch.nn as nn
 import os
-import math
 from scipy.ndimage import binary_erosion
 from preprocessing import gaussian_blur
 
 
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+# DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+DEVICE = 'cpu'
 DATA_PATH = r'C:\Users\guoli\Documents\Coding\python stuff\climate net\final'
 
 
@@ -28,7 +28,7 @@ class LipschitzLinear(torch.nn.Module):
         self.initialize_parameters()
 
     def initialize_parameters(self):
-        stdv = 1. / math.sqrt(self.weight.size(1))
+        stdv = 1. / self.weight.size(1) ** 0.5
         self.weight.data.uniform_(-stdv, stdv)
         self.bias.data.uniform_(-stdv, stdv)
 
@@ -288,7 +288,15 @@ class TemperatureNet(nn.Module):
     @torch.no_grad()
     def predict(self, x: np.ndarray) -> np.ndarray:
         self.eval()
-        x = torch.from_numpy(x).float().to(DEVICE)
+        print("TEMP START")
+        print(x)
+        print(x.shape)
+        print(torch.from_numpy(x))
+        x = torch.from_numpy(x).float()
+        print("X")
+        x = x.to(DEVICE)
+        print("X DEVICE")
+        print(self.device)
         return torch.concatenate(self.forward(x), dim=0).cpu().numpy()
 
     def loss_function(self, y: Tensor, t: Tensor, weight: Tensor, mask: Tensor) -> Tensor:

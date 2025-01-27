@@ -9,7 +9,8 @@ from scipy.ndimage import binary_erosion
 from preprocessing import gaussian_blur
 from model_temp import TemperatureNet, LipschitzLinear
 
-DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+# DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+DEVICE = 'cpu'
 DATA_PATH = r'C:\Users\guoli\Documents\Coding\python stuff\climate net\final'
 
 

@@ -7,6 +7,8 @@ from model_prec import PrecipitationNet
 from model_temp import TemperatureNet
 from datetime import datetime
 import numpy as np
+import webview
+import traceback
 
 TEMPERATURE_NET = TemperatureNet()
 PRECIPITATION_NET = PrecipitationNet()
@@ -52,7 +54,17 @@ def index():
                    statistics=[min_elevation, max_elevation, farthest_land, farthest_water])
 
 
+webview.create_window('Climate Net', APP, min_size=(900, 500))
+
+# GUI mode - close splash screen on load
+try:
+    import pyi_splash
+    pyi_splash.close()
+except:
+    pass
+
 if __name__ == '__main__':
     TEMPERATURE_NET.load('static/model')
     PRECIPITATION_NET.load('static/model')
-    APP.run()
+    # APP.run()
+    webview.start(icon='static/assets/icon.png')

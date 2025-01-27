@@ -626,6 +626,7 @@ input[type=file]::file-selector-button:active, input[type=button]:active {
 	line-height: 27px;
 	padding: 0px 5px;
 	transition: 0.2s;
+	text-wrap: nowrap;
 }
 .inner-textnum {
 	font-size: 14px;
