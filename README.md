@@ -2,7 +2,7 @@
 <img src="screenshot/banner.png" alt="Banner" />
 </p>
 
-# Climate-Net <img src="static/assets/icon.png" alt="Banner" width='24px'/>
+# <img src="static/assets/icon.png" alt="Banner" width='24px'/> Climate-Net
 
 A worldbuilding app that uses neural networks to predict the climate of Earth-like planets, intended as a fast, high-resolution tool for editing elevation maps and realistic climates. In this context, "Earth-like" means to match modern-era Earth in every property except for the elevation map. The only inputs required are elevation and land/water boundaries; the outputs include monthly temperature and precipitation and climate classifications.
 
