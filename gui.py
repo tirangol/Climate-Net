@@ -1,18 +1,35 @@
 """Climate Net - GUI Part"""
-
+import onnxruntime
 from flask import Flask, render_template, request, jsonify
 from preprocessing import preprocess_inference, get_elevation_extremes, get_distance_extremes, \
     get_koppen, get_trewartha
-from model_prec import PrecipitationNet
-from model_temp import TemperatureNet
 from datetime import datetime
 import numpy as np
 import webview
-import traceback
+import os
 
-TEMPERATURE_NET = TemperatureNet()
-PRECIPITATION_NET = PrecipitationNet()
+
 APP = Flask(__name__)
+webview.create_window('Climate Net', APP, min_size=(900, 500))
+
+# GUI mode - close splash screen on load
+try:
+    import pyi_splash
+    pyi_splash.close()
+except:
+    pass
+
+
+MODEL_PATH = r'static/model'
+TEMPERATURE_NET = onnxruntime.InferenceSession(os.path.join(MODEL_PATH, 'temperature-net.onnx'))
+PRECIPITATION_NET = onnxruntime.InferenceSession(os.path.join(MODEL_PATH, 'precipitation-net.onnx'))
+
+
+def predict(x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    temp = TEMPERATURE_NET.run(None, {'input': x.astype(np.float32)})[0]
+    prec = PRECIPITATION_NET.run(None, {'input': x.astype(np.float32),
+                                        'onnx::ReduceMax_1': temp.astype(np.float32)})[0]
+    return temp, prec
 
 
 @APP.route('/', methods=['GET', 'POST'])
@@ -34,8 +51,7 @@ def index():
     # Predict
     t = datetime.now() - t0
     print(f"[3/4] Making predictions... ({t.seconds + t.microseconds / 1e6} seconds elapsed)")
-    temp = TEMPERATURE_NET.predict(x)[:12]
-    prec = PRECIPITATION_NET.predict(x, temp)[:12]
+    temp, prec = predict(x)
 
     # Postprocessing
     temp_min, temp_max = float(np.min(temp)), float(np.max(temp))
@@ -54,17 +70,6 @@ def index():
                    statistics=[min_elevation, max_elevation, farthest_land, farthest_water])
 
 
-webview.create_window('Climate Net', APP, min_size=(900, 500))
-
-# GUI mode - close splash screen on load
-try:
-    import pyi_splash
-    pyi_splash.close()
-except:
-    pass
-
 if __name__ == '__main__':
-    TEMPERATURE_NET.load('static/model')
-    PRECIPITATION_NET.load('static/model')
     # APP.run()
     webview.start(icon='static/assets/icon.png')

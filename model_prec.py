@@ -7,10 +7,10 @@ import torch.nn as nn
 import os
 from scipy.ndimage import binary_erosion
 from preprocessing import gaussian_blur
-from model_temp import TemperatureNet, LipschitzLinear
+from model_temp import TemperatureNet, LipschitzLinear, gaussian_blur
 
-# DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-DEVICE = 'cpu'
+
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 DATA_PATH = r'C:\Users\guoli\Documents\Coding\python stuff\climate net\final'
 
 
@@ -236,21 +236,21 @@ class PrecipitationNet(nn.Module):
          water_current_temperature, closest_coast, continentality, ediff (4), west, east]
         """
         # Elevation differences
-        latitude = x[1].cpu().numpy()
-        rising_left = x[[21, 23]].cpu().numpy()
-        rising_right = x[[22, 24]].cpu().numpy()
+        latitude = x[None, 1]
+        rising_left = x[[21, 23]]
+        rising_right = x[[22, 24]]
         boundary_left_down = gaussian_blur((latitude >= 0) & (latitude < 30), 5)
         boundary_left_up = gaussian_blur((latitude < 0) & (latitude >= -30), 5)
         boundary_right_down = gaussian_blur((latitude < -20) & (latitude >= -60), 5)
         boundary_right_up = gaussian_blur((latitude >= 20) & (latitude < 60), 5)
-        left_down = boundary_left_down * gaussian_blur(-np.minimum(0, rising_right), 1, True)
-        left_up = boundary_left_up * gaussian_blur(np.maximum(0, rising_left), 1, True)
-        right_down = boundary_right_down * gaussian_blur(-np.minimum(0, rising_left), 1, True)
-        right_up = boundary_right_up * gaussian_blur(np.maximum(0, rising_right), 1, True)
-        left_down = self.to2d(torch.from_numpy(left_down).to(DEVICE).float())
-        left_up = self.to2d(torch.from_numpy(left_up).to(DEVICE).float())
-        right_down = self.to2d(torch.from_numpy(right_down).to(DEVICE).float())
-        right_up = self.to2d(torch.from_numpy(right_up).to(DEVICE).float())
+        left_down = boundary_left_down * gaussian_blur(torch.relu(-rising_right), 1)
+        left_up = boundary_left_up * gaussian_blur(torch.relu(rising_left), 1)
+        right_down = boundary_right_down * gaussian_blur(torch.relu(-rising_left), 1)
+        right_up = boundary_right_up * gaussian_blur(torch.relu(rising_right), 1)
+        left_down = self.to2d(left_down)
+        left_up = self.to2d(left_up)
+        right_down = self.to2d(right_down)
+        right_up = self.to2d(right_up)
         elevation_diffs = torch.concatenate([self.elevation_diffs(left_down),
                                              self.elevation_diffs(right_down),
                                              self.elevation_diffs(left_up),
@@ -399,6 +399,11 @@ class PrecipitationNet(nn.Module):
 
     def save(self, path: str = '') -> None:
         torch.save(self.state_dict(), os.path.join(path, 'precipitation-net.pt'))
+        # model = PrecipitationNet()
+        # model.load(r'...')
+        # x = torch.randn(27, 180, 360)
+        # temp = torch.randn(12, 180, 360)
+        # torch.onnx.export(model, (x, temp), 'precipitation-net.onnx', input_names=['input'], dynamo=False)
 
     def load(self, path: str = '') -> None:
         self.load_state_dict(torch.load(os.path.join(path, 'precipitation-net.pt'), map_location=DEVICE))

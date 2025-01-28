@@ -13,14 +13,17 @@ This project is inspired by the extremely intricate worldbuilding tutorials of [
 
 ## Instructions
  
-The project used Python 3.10 with the following libraries:
+If you want to run Climate Net without interacting with Python or your computer's command line, download everything in this repository and run `Climate Net.exe`. The EXE was painfully compiled from PyInstaller after many days of strange errors and crashes. It works on Windows 10, but I do not know if it will work on other operating systems.
+ 
+If you want to run Climate Net using Python, this project used Python 3.10 with the following libraries:
 
 - `numpy` 1.26.4
 - `scipy` 1.14.1
-- `pytorch` 2.4.1
-- `torchvision` 0.19.1
-- `flask` 3.0.3
+- `onnxruntime` 1.20.1
 - `pywebview` 5.3.2
+- `flask` 3.0.3
+- `torch` 2.4.1
+- `torchvision` 0.19.1
 - `netCDF4` 1.7.2
 - `pillow` 11.0.0
 - `matplotlib` 3.9.2
@@ -28,15 +31,30 @@ The project used Python 3.10 with the following libraries:
 - `tqdm` 4.62.3
 - `pandas` 2.2.3
 
-Only the first six listed libraries are necessary to run this project: the others were just for preprocessing.
+Only the first five listed libraries are strictly necessary to run this project: the others were just for preprocessing.
 
-To get started, run `gui.py` on Python, either via your IDE or the command-line interface. After some time, a GUI should automatically pop up.
+To get started, run `gui.py` on Python, either via your IDE or the command-line interface. After some time, a GUI should automatically pop up. If something goes wrong, go into `gui.py` and erase every line that refers to `webview`, then uncomment `APP.run()`. If you run again, a regular Flask session should pop up in the command-line and print a local link for you to go to.
 
 If you're only interested in running the frontend, download only the `static` and `template` folders. Go to `index.html` and comment out the backend imports and use the non-backend imports. Also, every `<img>` tag has a part containing `src="{{ url_for('static', filename='something') )}}"`; replace this with `src="../something"`. In `index.js`, go to the function `predictClimate`, uncomment the "No backend" part and comment the "Backend" part.
 
-If you're only interested in running the backend, download only `preprocessing.py`, `model_temp.py`, `model_prec.py`, and `gui.py`. See the `index()` function in `gui.py` to understand the entire pipeline. The inputs are `elevation`, a $180 \times 360$ Numpy float array, and `land`, and $180 \times 360$ Numpy boolean array. The program might support larger inputs, but has not been tested on them, so expect bugs if you input anything differently.
+If you're only interested in running the backend, `gui.py` contains the main function for making predictions. If you're interested in using the pytorch models directly instead of ONNX, you can use the following code:
 
-EXE file coming soon, if I can figure out how to do that.
+```python
+TEMPERATURE_NET = TemperatureNet()
+PRECIPITATION_NET = PrecipitationNet()
+TEMPERATURE_NET.load(...)  # Path to the directory containing temperature-net.pt
+PRECIPITATION_NET.load(...)  # Path to the directory containing precipitation-net.pt
+
+elevation = ...  # (180 x 360) float numpy array
+land = ...  # (180 x 360) boolean numpy array
+x = preprocess_inference(elevation, land)
+
+temp, temp_avg, continentality, elevation_slope = TEMPERATURE_NET.predict(x)
+prec, prec_sum = TEMPERATURE_NET.predict(x, temp)
+
+# temp, prec are (12, 180, 360) numpy arrays
+# the others are (1, 180, 360) numpy arrays
+```
 
 
 ## Frontend
@@ -96,4 +114,4 @@ Icons come from random images found on Google search. Colour schemes are from ma
 
 Most of the future development time will probably be focused on improving the `PrecipitationNet` with better features.
 
-The webpage has not been thoroughly tested, so there may be bugs. Also, it has only been tested in Chrome and Edge on Windows. If something doesn't display right... welp.
+The web part of the app has not been thoroughly tested, so there may be bugs. Also, it has only been tested in Chrome and Edge on Windows 10. If something doesn't display right... welp.

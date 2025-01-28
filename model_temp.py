@@ -2,16 +2,24 @@ from typing import Iterable, Optional
 import numpy as np
 import torch
 from torch import Tensor
-from torchvision.transforms import Resize, InterpolationMode
+from torchvision.transforms import Resize, InterpolationMode, GaussianBlur
 import torch.nn as nn
 import os
 from scipy.ndimage import binary_erosion
-from preprocessing import gaussian_blur
 
 
-# DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
-DEVICE = 'cpu'
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 DATA_PATH = r'C:\Users\guoli\Documents\Coding\python stuff\climate net\final'
+
+
+def gaussian_blur(matrix: Tensor, radius: float) -> Tensor:
+    matrix = matrix.float()
+    t = round(radius * 2)
+    matrix_flipped = torch.flip(matrix, dims=(1, 2))
+    matrix = torch.concatenate([matrix_flipped[:, -t:, :], matrix, matrix_flipped[:, :t, :]], dim=1)
+    matrix = torch.concatenate([matrix[:, :, -t:], matrix, matrix[:, :, :t]], dim=2)
+    matrix = GaussianBlur(int(radius) * 2 + 1, int(radius))(matrix)
+    return matrix[:, t:-t, t:-t]
 
 
 class LipschitzLinear(torch.nn.Module):
@@ -211,26 +219,25 @@ class TemperatureNet(nn.Module):
          water_current_temperature, closest_coast, continentality, ediff (4), west, east]
         """
         # Elevation differences
-        latitude = x[1].cpu().numpy()
-        rising_left = x[[21, 23]].cpu().numpy()
-        rising_right = x[[22, 24]].cpu().numpy()
+        latitude = x[None, 1]
+        rising_left = x[[21, 23]]
+        rising_right = x[[22, 24]]
         boundary_left_down = gaussian_blur((latitude >= 0) & (latitude < 30), 5)
         boundary_left_up = gaussian_blur((latitude < 0) & (latitude >= -30), 5)
         boundary_right_down = gaussian_blur((latitude < -20) & (latitude >= -60), 5)
         boundary_right_up = gaussian_blur((latitude >= 20) & (latitude < 60), 5)
-        left_down = boundary_left_down * gaussian_blur(-np.minimum(0, rising_right), 1, True)
-        left_up = boundary_left_up * gaussian_blur(np.maximum(0, rising_left), 1, True)
-        right_down = boundary_right_down * gaussian_blur(-np.minimum(0, rising_left), 1, True)
-        right_up = boundary_right_up * gaussian_blur(np.maximum(0, rising_right), 1, True)
-        left_down = self.to2d(torch.from_numpy(left_down).to(DEVICE).float())
-        left_up = self.to2d(torch.from_numpy(left_up).to(DEVICE).float())
-        right_down = self.to2d(torch.from_numpy(right_down).to(DEVICE).float())
-        right_up = self.to2d(torch.from_numpy(right_up).to(DEVICE).float())
+        left_down = boundary_left_down * gaussian_blur(torch.relu(-rising_right), 1)
+        left_up = boundary_left_up * gaussian_blur(torch.relu(rising_left), 1)
+        right_down = boundary_right_down * gaussian_blur(torch.relu(-rising_left), 1)
+        right_up = boundary_right_up * gaussian_blur(torch.relu(rising_right), 1)
+        left_down = self.to2d(left_down)
+        left_up = self.to2d(left_up)
+        right_down = self.to2d(right_down)
+        right_up = self.to2d(right_up)
         elevation_diffs = torch.concatenate([self.elevation_diffs(left_down),
                                              self.elevation_diffs(right_down),
                                              self.elevation_diffs(left_up),
-                                             self.elevation_diffs(right_up)],
-                                            dim=1)  # (180 * 360, 4)
+                                             self.elevation_diffs(right_up)], dim=1)  # (180 * 360, 4)
         # Wind + water
         y = torch.concatenate([
             self.to2d(x[[1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 25, 26]]), elevation_diffs
@@ -288,16 +295,8 @@ class TemperatureNet(nn.Module):
     @torch.no_grad()
     def predict(self, x: np.ndarray) -> np.ndarray:
         self.eval()
-        print("TEMP START")
-        print(x)
-        print(x.shape)
-        print(torch.from_numpy(x))
-        x = torch.from_numpy(x).float()
-        print("X")
-        x = x.to(DEVICE)
-        print("X DEVICE")
-        print(self.device)
-        return torch.concatenate(self.forward(x), dim=0).cpu().numpy()
+        x = torch.from_numpy(x).float().to(DEVICE)
+        return torch.concatenate(self.forward(x), dim=0).detach().cpu().numpy()
 
     def loss_function(self, y: Tensor, t: Tensor, weight: Tensor, mask: Tensor) -> Tensor:
         if len(y.shape) == 3:
@@ -390,6 +389,10 @@ class TemperatureNet(nn.Module):
 
     def save(self, path: str = '') -> None:
         torch.save(self.state_dict(), os.path.join(path, 'temperature-net.pt'))
+        # model = TemperatureNet()
+        # model.load(r'...')
+        # x = torch.randn(27, 180, 360)
+        # torch.onnx.export(model, (x,), 'temperature-net.onnx', input_names=['input'], dynamo=False)
 
     def load(self, path: str = '') -> None:
         self.load_state_dict(torch.load(os.path.join(path, 'temperature-net.pt'), map_location=DEVICE))
@@ -424,4 +427,3 @@ def train() -> TemperatureNet:
     error = np.mean(result[:12] - t[:12], axis=0)
 
     return model
-
