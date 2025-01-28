@@ -6,7 +6,7 @@
 
 A worldbuilding app that uses neural networks to predict the climate of Earth-like planets, intended as a fast, high-resolution tool for editing elevation maps and realistic climates. In this context, "Earth-like" means to match modern-era Earth in every property except for the elevation map. The only inputs required are elevation and land/water boundaries; the outputs include monthly temperature and precipitation and climate classifications.
 
-An older 2023 version of the project [exists](https://github.com/tirangol/Projects/tree/main/climate%20net). This version upgrades from that in pretty much every way, from more input customization, more powerful map editing, more visualizations, downloading graphics, direct support for NPY (at the cost of TIFF files, which were not working), and faster inference times. I also felt the growing project size warranted a separate repository.
+An older 2023 version of the project [exists](https://github.com/tirangol/Projects/tree/main/climate%20net). This version upgrades from that in pretty much every way, from more input customization, more powerful map editing, more visualizations, downloading graphics, direct support for NPY (at the cost of TIFF files, which were not working), and faster inference times (~5 seconds). I also felt the growing project size warranted a separate repository.
 
 This project is inspired by the extremely intricate worldbuilding tutorials of [Worldbuilding Pasta](https://worldbuildingpasta.blogspot.com/p/blog-page.html), [Artefixian](https://www.youtube.com/playlist?list=PLduA6tsl3gyiX9fFJHi9qqq4RWx-dIcxO), and [Madeline James Writes](https://www.youtube.com/playlist?list=PLmhjHG1F7VXkkH4fG_t3WuZaikiQRJaHJ); the tool essentially performs the majority of steps outlined in the tutorials the best of my ability, to hopefully decent results. 
 
@@ -50,7 +50,7 @@ land = ...  # (180 x 360) boolean numpy array
 x = preprocess_inference(elevation, land)
 
 temp, temp_avg, continentality, elevation_slope = TEMPERATURE_NET.predict(x)
-prec, prec_sum = TEMPERATURE_NET.predict(x, temp)
+prec, prec_sum = PRECIPITATION_NET.predict(x, temp)
 
 # temp, prec are (12, 180, 360) numpy arrays
 # the others are (1, 180, 360) numpy arrays
